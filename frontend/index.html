@@ -182,7 +182,7 @@
       <h2>Cadastrar Cliente</h2>
       <div class="grid col3">
         <div><label>Nome</label><input id="c-nome" placeholder="João Silva" /></div>
-        <div><label>Telefone</label><input id="c-tel" placeholder="19999999999" /></div>
+        <div><label>Telefone</label><input id="c-tel" placeholder="(19) 99999-9999" maxlength="15" oninput="formatarTelefone(this)" /></div>
         <div><label>E-mail</label><input id="c-email" placeholder="joao@email.com" /></div>
       </div>
       <div class="mt">
@@ -260,12 +260,22 @@
 <script>
   const API = "http://localhost:3000/api";
 
+  function formatarTelefone(input) {
+    let v = input.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length <= 10)
+      v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+    else
+      v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+    input.value = v;
+  }
+
   async function req(method, url, body) {
     const res = await fetch(API + url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
+    if (res.status === 204) return null;
     const data = await res.json();
     if (!res.ok) throw new Error(data.erro || "Erro desconhecido");
     return data;
@@ -286,6 +296,7 @@
       if (b.getAttribute("onclick") === `trocarAba('${id}')`) b.classList.add("ativo");
     });
     document.getElementById("sec-" + id).classList.add("ativa");
+    document.getElementById("alerta").style.display = "none";
     carregarDados(id);
   }
 
@@ -351,8 +362,8 @@
     const el = document.getElementById("lista-clientes");
     if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum cliente cadastrado.</div>'; return; }
     el.innerHTML = `<table>
-      <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th></tr></thead>
-      <tbody>${dados.map(c => `<tr><td>${c.nome}</td><td>${c.telefone}</td><td>${c.email}</td></tr>`).join("")}</tbody>
+      <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead>
+      <tbody>${dados.map(c => `<tr><td>${c.nome}</td><td>${c.telefone}</td><td>${c.email}</td><td><button class="btn btn-danger btn-sm" onclick="deletarCliente('${c.id}')">Excluir</button></td></tr>`).join("")}</tbody>
     </table>`;
   }
 
@@ -376,8 +387,8 @@
     const el = document.getElementById("lista-profissionais");
     if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum profissional cadastrado.</div>'; return; }
     el.innerHTML = `<table>
-      <thead><tr><th>Nome</th><th>Especialidades</th></tr></thead>
-      <tbody>${dados.map(p => `<tr><td>${p.nome}</td><td>${p.especialidades.join(", ")}</td></tr>`).join("")}</tbody>
+      <thead><tr><th>Nome</th><th>Especialidades</th><th></th></tr></thead>
+      <tbody>${dados.map(p => `<tr><td>${p.nome}</td><td>${p.especialidades.join(", ")}</td><td><button class="btn btn-danger btn-sm" onclick="deletarProfissional('${p.id}')">Excluir</button></td></tr>`).join("")}</tbody>
     </table>`;
   }
 
@@ -400,8 +411,8 @@
     const el = document.getElementById("lista-servicos");
     if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum serviço cadastrado.</div>'; return; }
     el.innerHTML = `<table>
-      <thead><tr><th>Nome</th><th>Tipo</th><th>Duração</th><th>Preço</th></tr></thead>
-      <tbody>${dados.map(s => `<tr><td>${s.nome}</td><td>${s.tipo}</td><td>${s.duracaoMinutos} min</td><td>R$ ${s.preco.toFixed(2)}</td></tr>`).join("")}</tbody>
+      <thead><tr><th>Nome</th><th>Tipo</th><th>Duração</th><th>Preço</th><th></th></tr></thead>
+      <tbody>${dados.map(s => `<tr><td>${s.nome}</td><td>${s.tipo}</td><td>${s.duracaoMinutos} min</td><td>R$ ${s.preco.toFixed(2)}</td><td><button class="btn btn-danger btn-sm" onclick="deletarServico('${s.id}')">Excluir</button></td></tr>`).join("")}</tbody>
     </table>`;
   }
 
@@ -417,6 +428,24 @@
       ["s-nome","s-preco"].forEach(id => document.getElementById(id).value = "");
       carregarServicos();
     } catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  async function deletarCliente(id) {
+    if (!confirm("Excluir este cliente?")) return;
+    try { await req("DELETE", `/clientes/${id}`); mostrarAlerta("Cliente excluído."); carregarClientes(); }
+    catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  async function deletarProfissional(id) {
+    if (!confirm("Excluir este profissional?")) return;
+    try { await req("DELETE", `/profissionais/${id}`); mostrarAlerta("Profissional excluído."); carregarProfissionais(); }
+    catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  async function deletarServico(id) {
+    if (!confirm("Excluir este serviço?")) return;
+    try { await req("DELETE", `/servicos/${id}`); mostrarAlerta("Serviço excluído."); carregarServicos(); }
+    catch(e) { mostrarAlerta(e.message, "erro"); }
   }
 
   // ── Selects do formulário de agendamento ──────────────────────────────────────

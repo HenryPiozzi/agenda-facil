@@ -63,6 +63,11 @@ app.post("/api/clientes", tryCatch((req, res) => {
   res.status(201).json(cliente);
 }));
 
+app.delete("/api/clientes/:id", tryCatch((req, res) => {
+  clienteRepo.deletar(req.params.id);
+  res.status(204).send();
+}));
+
 // ── Serviços ──────────────────────────────────────────────────────────────────
 
 app.get("/api/servicos", tryCatch((req, res) => {
@@ -76,6 +81,11 @@ app.post("/api/servicos", tryCatch((req, res) => {
   res.status(201).json(servico);
 }));
 
+app.delete("/api/servicos/:id", tryCatch((req, res) => {
+  servicoRepo.deletar(req.params.id);
+  res.status(204).send();
+}));
+
 // ── Profissionais ─────────────────────────────────────────────────────────────
 
 app.get("/api/profissionais", tryCatch((req, res) => {
@@ -87,6 +97,11 @@ app.post("/api/profissionais", tryCatch((req, res) => {
   const uc = new CriarProfissionalUseCase(profissionalRepo);
   const profissional = uc.executar(req.body);
   res.status(201).json(profissional);
+}));
+
+app.delete("/api/profissionais/:id", tryCatch((req, res) => {
+  profissionalRepo.deletar(req.params.id);
+  res.status(204).send();
 }));
 
 // ── Agendamentos ──────────────────────────────────────────────────────────────

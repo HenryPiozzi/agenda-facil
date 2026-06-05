@@ -81,6 +81,11 @@ export class SQLiteClienteRepository implements ClienteRepository {
     const rows = this.db.prepare("SELECT * FROM clientes").all() as any[];
     return rows.map((r) => new Cliente(r));
   }
+
+  deletar(id: string): void {
+    this.db.prepare("DELETE FROM agendamentos WHERE cliente_id = ?").run(id);
+    this.db.prepare("DELETE FROM clientes WHERE id = ?").run(id);
+  }
 }
 
 export class SQLiteProfissionalRepository implements ProfissionalRepository {
@@ -103,6 +108,11 @@ export class SQLiteProfissionalRepository implements ProfissionalRepository {
     const rows = this.db.prepare("SELECT * FROM profissionais").all() as any[];
     return rows.map((r) => new Profissional({ ...r, especialidades: JSON.parse(r.especialidades) }));
   }
+
+  deletar(id: string): void {
+    this.db.prepare("DELETE FROM agendamentos WHERE profissional_id = ?").run(id);
+    this.db.prepare("DELETE FROM profissionais WHERE id = ?").run(id);
+  }
 }
 
 export class SQLiteServicoRepository implements ServicoRepository {
@@ -123,6 +133,11 @@ export class SQLiteServicoRepository implements ServicoRepository {
   listar(): Servico[] {
     const rows = this.db.prepare("SELECT * FROM servicos").all() as any[];
     return rows.map((r) => new Servico({ ...r, duracaoMinutos: r.duracao_minutos }));
+  }
+
+  deletar(id: string): void {
+    this.db.prepare("DELETE FROM agendamentos WHERE servico_id = ?").run(id);
+    this.db.prepare("DELETE FROM servicos WHERE id = ?").run(id);
   }
 }
 
