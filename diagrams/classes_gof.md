@@ -63,6 +63,24 @@ classDiagram
     NotificationService o-- NotificationObserver
 
     %% ── REPOSITORY — interfaces DIP (repositories.ts / repositoriesImpl.ts) ─
+    class ClienteRepository {
+        <<interface>>
+        +salvar(cliente: Cliente) Cliente
+        +buscarPorId(id: string) Cliente
+        +buscarPorEmail(email: string) Cliente
+        +listar() Cliente[]
+        +deletar(id: string) void
+    }
+    class SQLiteClienteRepository {
+        -db: Database
+        +salvar(cliente: Cliente) Cliente
+        +buscarPorId(id: string) Cliente
+        +buscarPorEmail(email: string) Cliente
+        +listar() Cliente[]
+        +deletar(id: string) void
+    }
+    ClienteRepository <|-- SQLiteClienteRepository
+
     class AgendamentoRepository {
         <<interface>>
         +salvar(agendamento: Agendamento) Agendamento

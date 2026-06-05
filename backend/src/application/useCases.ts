@@ -13,6 +13,7 @@ import {
 } from "../domain/repositories";
 import { DisponibilidadeStrategy, DisponibilidadePorIntervalo } from "../domain/schedulingStrategy";
 import { INotificationService } from "../domain/notifications";
+import { getFactory } from "../domain/factories";
 
 export class CriarClienteUseCase {
   constructor(private readonly repo: ClienteRepository) {}
@@ -35,7 +36,7 @@ export class CriarServicoUseCase {
     duracaoMinutos: number;
     preco: number;
   }): Servico {
-    const servico = new Servico({ id: uuidv4(), ...params });
+    const servico = getFactory(params.tipo).create(params.nome, params.preco);
     return this.repo.salvar(servico);
   }
 }
