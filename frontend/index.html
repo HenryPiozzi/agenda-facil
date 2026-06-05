@@ -124,11 +124,11 @@
 </header>
 
 <nav>
-  <button class="ativo">Agendamentos</button>
-  <button>Novo Agendamento</button>
-  <button>Clientes</button>
-  <button>Profissionais</button>
-  <button>Serviços</button>
+  <button class="ativo" onclick="trocarAba('agendamentos')">Agendamentos</button>
+  <button onclick="trocarAba('novo-agendamento')">Novo Agendamento</button>
+  <button onclick="trocarAba('clientes')">Clientes</button>
+  <button onclick="trocarAba('profissionais')">Profissionais</button>
+  <button onclick="trocarAba('servicos')">Serviços</button>
 </nav>
 
 <main>
@@ -141,6 +141,38 @@
     </div>
   </div>
 
+  <div id="sec-novo-agendamento" class="secao">
+    <div class="card">
+      <h2>Novo Agendamento</h2>
+      <div class="grid">
+        <div>
+          <label>Cliente</label>
+          <select id="sel-cliente"><option value="">Selecione...</option></select>
+        </div>
+        <div>
+          <label>Profissional</label>
+          <select id="sel-profissional"><option value="">Selecione...</option></select>
+        </div>
+        <div>
+          <label>Serviço</label>
+          <select id="sel-servico"><option value="">Selecione...</option></select>
+        </div>
+        <div>
+          <label>Data e Hora</label>
+          <input type="datetime-local" id="input-data" step="1800" />
+          <span style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;display:block">Horários em intervalos de 30 min</span>
+        </div>
+      </div>
+      <div class="mt">
+        <label>Observações (opcional)</label>
+        <textarea id="input-obs" rows="2" style="resize:none"></textarea>
+      </div>
+      <div class="mt">
+        <button class="btn btn-primary" onclick="criarAgendamento()">Confirmar Agendamento</button>
+      </div>
+    </div>
+  </div>
+
   <div id="sec-clientes" class="secao">
     <div class="card">
       <h2>Cadastrar Cliente</h2>
@@ -150,15 +182,98 @@
         <div><label>E-mail</label><input id="c-email" placeholder="joao@email.com" /></div>
       </div>
       <div class="mt">
-        <button class="btn btn-primary">Cadastrar</button>
+        <button class="btn btn-primary" onclick="criarCliente()">Cadastrar</button>
       </div>
     </div>
     <div class="card">
       <h2>Clientes Cadastrados</h2>
-      <div id="lista-clientes"><div class="vazio">Nenhum cliente cadastrado.</div></div>
+      <div id="lista-clientes"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div id="sec-profissionais" class="secao">
+    <div class="card">
+      <h2>Cadastrar Profissional</h2>
+      <div class="grid">
+        <div><label>Nome</label><input id="p-nome" placeholder="Carlos" /></div>
+        <div>
+          <label>Especialidades</label>
+          <div style="display:flex; gap:1rem; margin-top:0.4rem; flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:0.3rem;color:#333;font-size:0.9rem">
+              <input type="checkbox" value="corte" class="esp"> Corte
+            </label>
+            <label style="display:flex;align-items:center;gap:0.3rem;color:#333;font-size:0.9rem">
+              <input type="checkbox" value="barba" class="esp"> Barba
+            </label>
+            <label style="display:flex;align-items:center;gap:0.3rem;color:#333;font-size:0.9rem">
+              <input type="checkbox" value="corte_e_barba" class="esp"> Corte + Barba
+            </label>
+            <label style="display:flex;align-items:center;gap:0.3rem;color:#333;font-size:0.9rem">
+              <input type="checkbox" value="tratamento" class="esp"> Tratamento
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="mt">
+        <button class="btn btn-primary" onclick="criarProfissional()">Cadastrar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Profissionais Cadastrados</h2>
+      <div id="lista-profissionais"><div class="vazio">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div id="sec-servicos" class="secao">
+    <div class="card">
+      <h2>Cadastrar Serviço</h2>
+      <div class="grid col3">
+        <div><label>Nome</label><input id="s-nome" placeholder="Corte Masculino" /></div>
+        <div>
+          <label>Tipo</label>
+          <select id="s-tipo">
+            <option value="corte">Corte</option>
+            <option value="barba">Barba</option>
+            <option value="corte_e_barba">Corte + Barba</option>
+            <option value="tratamento">Tratamento</option>
+          </select>
+        </div>
+        <div><label>Preço (R$)</label><input id="s-preco" type="number" placeholder="45.00" /></div>
+      </div>
+      <div class="mt">
+        <button class="btn btn-primary" onclick="criarServico()">Cadastrar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Serviços Cadastrados</h2>
+      <div id="lista-servicos"><div class="vazio">Carregando...</div></div>
     </div>
   </div>
 </main>
 
+<script>
+  function trocarAba(id) {
+    document.querySelectorAll(".secao").forEach(s => s.classList.remove("ativa"));
+    document.querySelectorAll("nav button").forEach(b => {
+      b.classList.remove("ativo");
+      if (b.getAttribute("onclick") === `trocarAba('${id}')`) b.classList.add("ativo");
+    });
+    document.getElementById("sec-" + id).classList.add("ativa");
+  }
+
+  function mostrarAlerta(msg, tipo = "ok") {
+    const el = document.getElementById("alerta");
+    el.className = `alerta alerta-${tipo}`;
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 4000);
+  }
+
+  // Funções ainda sem integração com API
+  function criarAgendamento() { mostrarAlerta("Em breve: integração com API.", "erro"); }
+  function criarCliente() { mostrarAlerta("Em breve: integração com API.", "erro"); }
+  function criarProfissional() { mostrarAlerta("Em breve: integração com API.", "erro"); }
+  function criarServico() { mostrarAlerta("Em breve: integração com API.", "erro"); }
+</script>
 </body>
 </html>
