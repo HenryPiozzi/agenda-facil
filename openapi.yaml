@@ -1,0 +1,475 @@
+openapi: 3.1.0
+info:
+  title: AgendaFácil API
+  description: |
+    API REST do sistema de agendamento de serviços AgendaFácil.
+    Desenvolvido como trabalho final da disciplina 12452 — Padrões e Arquitetura de Software (PUC-Campinas).
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Ambiente de desenvolvimento local
+
+tags:
+  - name: Clientes
+    description: Gerenciamento de clientes
+  - name: Profissionais
+    description: Gerenciamento de profissionais
+  - name: Serviços
+    description: Gerenciamento de serviços oferecidos
+  - name: Agendamentos
+    description: Criação e gerenciamento de agendamentos
+
+paths:
+  /clientes:
+    get:
+      tags: [Clientes]
+      summary: Lista todos os clientes
+      operationId: listarClientes
+      responses:
+        "200":
+          description: Lista de clientes cadastrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cliente"
+
+    post:
+      tags: [Clientes]
+      summary: Cadastra um novo cliente
+      operationId: criarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarClienteInput"
+            example:
+              nome: "João Silva"
+              telefone: "(19) 99999-0001"
+              email: "joao@email.com"
+      responses:
+        "201":
+          description: Cliente criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /clientes/{id}:
+    delete:
+      tags: [Clientes]
+      summary: Remove um cliente e seus agendamentos vinculados
+      operationId: deletarCliente
+      parameters:
+        - $ref: "#/components/parameters/ClienteId"
+      responses:
+        "204":
+          description: Cliente removido com sucesso
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /profissionais:
+    get:
+      tags: [Profissionais]
+      summary: Lista todos os profissionais
+      operationId: listarProfissionais
+      responses:
+        "200":
+          description: Lista de profissionais cadastrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Profissional"
+
+    post:
+      tags: [Profissionais]
+      summary: Cadastra um novo profissional
+      operationId: criarProfissional
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarProfissionalInput"
+            example:
+              nome: "Carlos Barber"
+              especialidades: ["corte", "barba"]
+      responses:
+        "201":
+          description: Profissional criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profissional"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /profissionais/{id}:
+    delete:
+      tags: [Profissionais]
+      summary: Remove um profissional e seus agendamentos vinculados
+      operationId: deletarProfissional
+      parameters:
+        - $ref: "#/components/parameters/ProfissionalId"
+      responses:
+        "204":
+          description: Profissional removido com sucesso
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /servicos:
+    get:
+      tags: [Serviços]
+      summary: Lista todos os serviços disponíveis
+      operationId: listarServicos
+      responses:
+        "200":
+          description: Lista de serviços
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Servico"
+
+    post:
+      tags: [Serviços]
+      summary: Cadastra um novo serviço
+      operationId: criarServico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarServicoInput"
+            example:
+              nome: "Corte Degradê"
+              tipo: "corte"
+              duracaoMinutos: 30
+              preco: 45.00
+      responses:
+        "201":
+          description: Serviço criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Servico"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /servicos/{id}:
+    delete:
+      tags: [Serviços]
+      summary: Remove um serviço e seus agendamentos vinculados
+      operationId: deletarServico
+      parameters:
+        - $ref: "#/components/parameters/ServicoId"
+      responses:
+        "204":
+          description: Serviço removido com sucesso
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /agendamentos:
+    get:
+      tags: [Agendamentos]
+      summary: Lista todos os agendamentos
+      operationId: listarAgendamentos
+      responses:
+        "200":
+          description: Lista de agendamentos ordenada por data decrescente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agendamento"
+
+    post:
+      tags: [Agendamentos]
+      summary: Cria um novo agendamento
+      operationId: criarAgendamento
+      description: |
+        Verifica a disponibilidade do profissional antes de criar o agendamento.
+        Retorna 400 se o horário estiver ocupado ou se o profissional não atender o tipo de serviço solicitado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarAgendamentoInput"
+            example:
+              clienteId: "uuid-do-cliente"
+              profissionalId: "uuid-do-profissional"
+              servicoId: "uuid-do-servico"
+              dataHora: "2026-06-10T10:00:00.000Z"
+              observacoes: "Prefere máquina nº 2"
+      responses:
+        "201":
+          description: Agendamento criado com status "pendente"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agendamento"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /agendamentos/{id}/confirmar:
+    patch:
+      tags: [Agendamentos]
+      summary: Confirma um agendamento pendente
+      operationId: confirmarAgendamento
+      parameters:
+        - $ref: "#/components/parameters/AgendamentoId"
+      responses:
+        "200":
+          description: Agendamento confirmado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agendamento"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /agendamentos/{id}/cancelar:
+    patch:
+      tags: [Agendamentos]
+      summary: Cancela um agendamento
+      operationId: cancelarAgendamento
+      parameters:
+        - $ref: "#/components/parameters/AgendamentoId"
+      responses:
+        "200":
+          description: Agendamento cancelado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agendamento"
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+components:
+  parameters:
+    ClienteId:
+      name: id
+      in: path
+      required: true
+      description: UUID do cliente
+      schema:
+        type: string
+        format: uuid
+
+    ProfissionalId:
+      name: id
+      in: path
+      required: true
+      description: UUID do profissional
+      schema:
+        type: string
+        format: uuid
+
+    ServicoId:
+      name: id
+      in: path
+      required: true
+      description: UUID do serviço
+      schema:
+        type: string
+        format: uuid
+
+    AgendamentoId:
+      name: id
+      in: path
+      required: true
+      description: UUID do agendamento
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    ErroValidacao:
+      description: Erro de validação ou regra de negócio violada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Erro"
+          examples:
+            horario_indisponivel:
+              summary: Horário já ocupado
+              value:
+                erro: "Horário indisponível para Carlos Barber."
+            profissional_nao_atende:
+              summary: Profissional não atende o serviço
+              value:
+                erro: "Carlos Barber não atende tratamento."
+            email_duplicado:
+              summary: E-mail já cadastrado
+              value:
+                erro: "Já existe um cliente com o e-mail joao@email.com."
+
+  schemas:
+    Erro:
+      type: object
+      required: [erro]
+      properties:
+        erro:
+          type: string
+          description: Mensagem descritiva do erro
+
+    TipoServico:
+      type: string
+      enum: [corte, barba, corte_e_barba, tratamento]
+
+    StatusAgendamento:
+      type: string
+      enum: [pendente, confirmado, cancelado, concluido]
+
+    Cliente:
+      type: object
+      required: [id, nome, telefone, email]
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+          example: "João Silva"
+        telefone:
+          type: string
+          example: "(19) 99999-0001"
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+
+    CriarClienteInput:
+      type: object
+      required: [nome, telefone, email]
+      properties:
+        nome:
+          type: string
+        telefone:
+          type: string
+          description: Mínimo de 10 dígitos (DDD + número)
+        email:
+          type: string
+          format: email
+
+    Profissional:
+      type: object
+      required: [id, nome, especialidades]
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+          example: "Carlos Barber"
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/TipoServico"
+          example: ["corte", "barba"]
+
+    CriarProfissionalInput:
+      type: object
+      required: [nome, especialidades]
+      properties:
+        nome:
+          type: string
+        especialidades:
+          type: array
+          items:
+            $ref: "#/components/schemas/TipoServico"
+          minItems: 1
+
+    Servico:
+      type: object
+      required: [id, nome, tipo, duracaoMinutos, preco]
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+          example: "Corte Degradê"
+        tipo:
+          $ref: "#/components/schemas/TipoServico"
+        duracaoMinutos:
+          type: integer
+          minimum: 1
+          example: 30
+        preco:
+          type: number
+          format: float
+          minimum: 0
+          example: 45.00
+
+    CriarServicoInput:
+      type: object
+      required: [nome, tipo, duracaoMinutos, preco]
+      properties:
+        nome:
+          type: string
+        tipo:
+          $ref: "#/components/schemas/TipoServico"
+        duracaoMinutos:
+          type: integer
+          minimum: 1
+        preco:
+          type: number
+          minimum: 0
+
+    Agendamento:
+      type: object
+      required: [id, cliente, profissional, servico, dataHora, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cliente:
+          $ref: "#/components/schemas/Cliente"
+        profissional:
+          $ref: "#/components/schemas/Profissional"
+        servico:
+          $ref: "#/components/schemas/Servico"
+        dataHora:
+          type: string
+          format: date-time
+          example: "2026-06-10T10:00:00.000Z"
+        status:
+          $ref: "#/components/schemas/StatusAgendamento"
+        observacoes:
+          type: string
+          nullable: true
+          example: "Prefere máquina nº 2"
+
+    CriarAgendamentoInput:
+      type: object
+      required: [clienteId, profissionalId, servicoId, dataHora]
+      properties:
+        clienteId:
+          type: string
+          format: uuid
+        profissionalId:
+          type: string
+          format: uuid
+        servicoId:
+          type: string
+          format: uuid
+        dataHora:
+          type: string
+          format: date-time
+          description: |
+            Horário no formato ISO 8601. Deve estar em múltiplo de 30 minutos
+            (ex: 10:00, 10:30) para a estratégia padrão de disponibilidade.
+        observacoes:
+          type: string
+          nullable: true
