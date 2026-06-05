@@ -137,7 +137,7 @@
   <div id="sec-agendamentos" class="secao ativa">
     <div class="card">
       <h2>Agendamentos</h2>
-      <div id="lista-agendamentos"><div class="vazio">Carregando...</div></div>
+      <div id="lista-agendamentos"><div class="vazio">Em desenvolvimento...</div></div>
     </div>
   </div>
 
@@ -252,13 +252,17 @@
 </main>
 
 <script>
-  function trocarAba(id) {
-    document.querySelectorAll(".secao").forEach(s => s.classList.remove("ativa"));
-    document.querySelectorAll("nav button").forEach(b => {
-      b.classList.remove("ativo");
-      if (b.getAttribute("onclick") === `trocarAba('${id}')`) b.classList.add("ativo");
+  const API = "http://localhost:3000/api";
+
+  async function req(method, url, body) {
+    const res = await fetch(API + url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
     });
-    document.getElementById("sec-" + id).classList.add("ativa");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro || "Erro desconhecido");
+    return data;
   }
 
   function mostrarAlerta(msg, tipo = "ok") {
@@ -269,11 +273,99 @@
     setTimeout(() => el.style.display = "none", 4000);
   }
 
-  // Funções ainda sem integração com API
-  function criarAgendamento() { mostrarAlerta("Em breve: integração com API.", "erro"); }
-  function criarCliente() { mostrarAlerta("Em breve: integração com API.", "erro"); }
-  function criarProfissional() { mostrarAlerta("Em breve: integração com API.", "erro"); }
-  function criarServico() { mostrarAlerta("Em breve: integração com API.", "erro"); }
+  function trocarAba(id) {
+    document.querySelectorAll(".secao").forEach(s => s.classList.remove("ativa"));
+    document.querySelectorAll("nav button").forEach(b => {
+      b.classList.remove("ativo");
+      if (b.getAttribute("onclick") === `trocarAba('${id}')`) b.classList.add("ativo");
+    });
+    document.getElementById("sec-" + id).classList.add("ativa");
+    carregarDados(id);
+  }
+
+  // ── Clientes ──────────────────────────────────────────────────────────────
+
+  async function carregarClientes() {
+    const dados = await req("GET", "/clientes");
+    const el = document.getElementById("lista-clientes");
+    if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum cliente cadastrado.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th></tr></thead>
+      <tbody>${dados.map(c => `<tr><td>${c.nome}</td><td>${c.telefone}</td><td>${c.email}</td></tr>`).join("")}</tbody>
+    </table>`;
+  }
+
+  async function criarCliente() {
+    try {
+      await req("POST", "/clientes", {
+        nome: document.getElementById("c-nome").value,
+        telefone: document.getElementById("c-tel").value,
+        email: document.getElementById("c-email").value,
+      });
+      mostrarAlerta("Cliente cadastrado!");
+      ["c-nome","c-tel","c-email"].forEach(id => document.getElementById(id).value = "");
+      carregarClientes();
+    } catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  // ── Profissionais ─────────────────────────────────────────────────────────
+
+  async function carregarProfissionais() {
+    const dados = await req("GET", "/profissionais");
+    const el = document.getElementById("lista-profissionais");
+    if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum profissional cadastrado.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>Nome</th><th>Especialidades</th></tr></thead>
+      <tbody>${dados.map(p => `<tr><td>${p.nome}</td><td>${p.especialidades.join(", ")}</td></tr>`).join("")}</tbody>
+    </table>`;
+  }
+
+  async function criarProfissional() {
+    const especialidades = [...document.querySelectorAll(".esp:checked")].map(c => c.value);
+    if (!especialidades.length) { mostrarAlerta("Selecione ao menos uma especialidade.", "erro"); return; }
+    try {
+      await req("POST", "/profissionais", { nome: document.getElementById("p-nome").value, especialidades });
+      mostrarAlerta("Profissional cadastrado!");
+      document.getElementById("p-nome").value = "";
+      document.querySelectorAll(".esp").forEach(c => c.checked = false);
+      carregarProfissionais();
+    } catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  // ── Serviços ──────────────────────────────────────────────────────────────
+
+  async function carregarServicos() {
+    const dados = await req("GET", "/servicos");
+    const el = document.getElementById("lista-servicos");
+    if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum serviço cadastrado.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>Nome</th><th>Tipo</th><th>Duração</th><th>Preço</th></tr></thead>
+      <tbody>${dados.map(s => `<tr><td>${s.nome}</td><td>${s.tipo}</td><td>${s.duracaoMinutos} min</td><td>R$ ${s.preco.toFixed(2)}</td></tr>`).join("")}</tbody>
+    </table>`;
+  }
+
+  async function criarServico() {
+    try {
+      await req("POST", "/servicos", {
+        nome: document.getElementById("s-nome").value,
+        tipo: document.getElementById("s-tipo").value,
+        duracaoMinutos: 30,
+        preco: parseFloat(document.getElementById("s-preco").value),
+      });
+      mostrarAlerta("Serviço cadastrado!");
+      ["s-nome","s-preco"].forEach(id => document.getElementById(id).value = "");
+      carregarServicos();
+    } catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  // Agendamento ainda em desenvolvimento
+  function criarAgendamento() { mostrarAlerta("Integração de agendamentos em andamento.", "erro"); }
+
+  function carregarDados(aba) {
+    if (aba === "clientes") carregarClientes();
+    else if (aba === "profissionais") carregarProfissionais();
+    else if (aba === "servicos") carregarServicos();
+  }
 </script>
 </body>
 </html>
