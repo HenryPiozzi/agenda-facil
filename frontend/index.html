@@ -113,6 +113,7 @@
     .alerta-ok { background: #d1fae5; color: #065f46; }
 
     .vazio { text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.9rem; }
+
     .acoes { display: flex; gap: 0.4rem; }
   </style>
 </head>
@@ -134,13 +135,15 @@
 <main>
   <div id="alerta" style="display:none"></div>
 
+  <!-- ── AGENDAMENTOS ── -->
   <div id="sec-agendamentos" class="secao ativa">
     <div class="card">
       <h2>Agendamentos</h2>
-      <div id="lista-agendamentos"><div class="vazio">Em desenvolvimento...</div></div>
+      <div id="lista-agendamentos"><div class="vazio">Carregando...</div></div>
     </div>
   </div>
 
+  <!-- ── NOVO AGENDAMENTO ── -->
   <div id="sec-novo-agendamento" class="secao">
     <div class="card">
       <h2>Novo Agendamento</h2>
@@ -160,7 +163,7 @@
         <div>
           <label>Data e Hora</label>
           <input type="datetime-local" id="input-data" step="1800" />
-          <span style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;display:block">Horários em intervalos de 30 min</span>
+          <span style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;display:block">Horários em intervalos de 30 min (ex: 10:00, 10:30)</span>
         </div>
       </div>
       <div class="mt">
@@ -173,6 +176,7 @@
     </div>
   </div>
 
+  <!-- ── CLIENTES ── -->
   <div id="sec-clientes" class="secao">
     <div class="card">
       <h2>Cadastrar Cliente</h2>
@@ -191,6 +195,7 @@
     </div>
   </div>
 
+  <!-- ── PROFISSIONAIS ── -->
   <div id="sec-profissionais" class="secao">
     <div class="card">
       <h2>Cadastrar Profissional</h2>
@@ -224,6 +229,7 @@
     </div>
   </div>
 
+  <!-- ── SERVIÇOS ── -->
   <div id="sec-servicos" class="secao">
     <div class="card">
       <h2>Cadastrar Serviço</h2>
@@ -283,7 +289,62 @@
     carregarDados(id);
   }
 
-  // ── Clientes ──────────────────────────────────────────────────────────────
+  function badgeStatus(status) {
+    return `<span class="badge badge-${status}">${status}</span>`;
+  }
+
+  // ── Agendamentos ────────────────────────────────────────────────────────────
+
+  async function carregarAgendamentos() {
+    try {
+      const dados = await req("GET", "/agendamentos");
+      const el = document.getElementById("lista-agendamentos");
+      if (!dados.length) { el.innerHTML = '<div class="vazio">Nenhum agendamento ainda.</div>'; return; }
+      el.innerHTML = `<table>
+        <thead><tr><th>Cliente</th><th>Profissional</th><th>Serviço</th><th>Data/Hora</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>${dados.map(a => `
+          <tr>
+            <td>${a.cliente.nome}</td>
+            <td>${a.profissional.nome}</td>
+            <td>${a.servico.nome}</td>
+            <td>${new Date(a.dataHora).toLocaleString("pt-BR")}</td>
+            <td>${badgeStatus(a.status)}</td>
+            <td class="acoes">
+              ${a.status === "pendente" ? `<button class="btn btn-success btn-sm" onclick="confirmar('${a.id}')">Confirmar</button>` : ""}
+              ${a.status !== "cancelado" && a.status !== "concluido" ? `<button class="btn btn-danger btn-sm" onclick="cancelar('${a.id}')">Cancelar</button>` : ""}
+            </td>
+          </tr>`).join("")}
+        </tbody>
+      </table>`;
+    } catch(e) { document.getElementById("lista-agendamentos").innerHTML = `<div class="vazio">Erro ao carregar.</div>`; }
+  }
+
+  async function confirmar(id) {
+    try { await req("PATCH", `/agendamentos/${id}/confirmar`); mostrarAlerta("Agendamento confirmado!"); carregarAgendamentos(); }
+    catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  async function cancelar(id) {
+    if (!confirm("Cancelar este agendamento?")) return;
+    try { await req("PATCH", `/agendamentos/${id}/cancelar`); mostrarAlerta("Agendamento cancelado."); carregarAgendamentos(); }
+    catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  async function criarAgendamento() {
+    try {
+      await req("POST", "/agendamentos", {
+        clienteId: document.getElementById("sel-cliente").value,
+        profissionalId: document.getElementById("sel-profissional").value,
+        servicoId: document.getElementById("sel-servico").value,
+        dataHora: document.getElementById("input-data").value,
+        observacoes: document.getElementById("input-obs").value || undefined,
+      });
+      mostrarAlerta("Agendamento criado com sucesso!");
+      trocarAba("agendamentos");
+    } catch(e) { mostrarAlerta(e.message, "erro"); }
+  }
+
+  // ── Clientes ─────────────────────────────────────────────────────────────────
 
   async function carregarClientes() {
     const dados = await req("GET", "/clientes");
@@ -308,7 +369,7 @@
     } catch(e) { mostrarAlerta(e.message, "erro"); }
   }
 
-  // ── Profissionais ─────────────────────────────────────────────────────────
+  // ── Profissionais ─────────────────────────────────────────────────────────────
 
   async function carregarProfissionais() {
     const dados = await req("GET", "/profissionais");
@@ -332,7 +393,7 @@
     } catch(e) { mostrarAlerta(e.message, "erro"); }
   }
 
-  // ── Serviços ──────────────────────────────────────────────────────────────
+  // ── Serviços ──────────────────────────────────────────────────────────────────
 
   async function carregarServicos() {
     const dados = await req("GET", "/servicos");
@@ -358,14 +419,33 @@
     } catch(e) { mostrarAlerta(e.message, "erro"); }
   }
 
-  // Agendamento ainda em desenvolvimento
-  function criarAgendamento() { mostrarAlerta("Integração de agendamentos em andamento.", "erro"); }
+  // ── Selects do formulário de agendamento ──────────────────────────────────────
+
+  async function preencherSelects() {
+    const [clientes, profissionais, servicos] = await Promise.all([
+      req("GET", "/clientes"),
+      req("GET", "/profissionais"),
+      req("GET", "/servicos"),
+    ]);
+    const sel = (id, dados, label) => {
+      document.getElementById(id).innerHTML =
+        `<option value="">Selecione...</option>` +
+        dados.map(d => `<option value="${d.id}">${d[label]}</option>`).join("");
+    };
+    sel("sel-cliente", clientes, "nome");
+    sel("sel-profissional", profissionais, "nome");
+    sel("sel-servico", servicos, "nome");
+  }
 
   function carregarDados(aba) {
-    if (aba === "clientes") carregarClientes();
+    if (aba === "agendamentos") carregarAgendamentos();
+    else if (aba === "novo-agendamento") preencherSelects();
+    else if (aba === "clientes") carregarClientes();
     else if (aba === "profissionais") carregarProfissionais();
     else if (aba === "servicos") carregarServicos();
   }
+
+  carregarAgendamentos();
 </script>
 </body>
 </html>
