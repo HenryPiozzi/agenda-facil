@@ -1,6 +1,11 @@
 /**
  * Implementações concretas dos repositórios usando better-sqlite3.
- * Princípio aplicado: DIP — implementam interfaces do domínio.
+ *
+ * Princípios aplicados:
+ * - DIP: implementam interfaces do domínio (ClienteRepository, etc.).
+ * - Adapter (GoF Estrutural): cada repositório adapta o formato plano do
+ *   SQLite (snake_case, tipos primitivos, JSON como string) para objetos de
+ *   domínio ricos — responsabilidade isolada no método privado toEntity().
  */
 
 import Database from "better-sqlite3";
@@ -69,22 +74,27 @@ export class SQLiteClienteRepository implements ClienteRepository {
 
   buscarPorId(id: string): Cliente | undefined {
     const row = this.db.prepare("SELECT * FROM clientes WHERE id = ?").get(id) as any;
-    return row ? new Cliente(row) : undefined;
+    return row ? this.toEntity(row) : undefined;
   }
 
   buscarPorEmail(email: string): Cliente | undefined {
     const row = this.db.prepare("SELECT * FROM clientes WHERE email = ?").get(email) as any;
-    return row ? new Cliente(row) : undefined;
+    return row ? this.toEntity(row) : undefined;
   }
 
   listar(): Cliente[] {
     const rows = this.db.prepare("SELECT * FROM clientes").all() as any[];
-    return rows.map((r) => new Cliente(r));
+    return rows.map((r) => this.toEntity(r));
   }
 
   deletar(id: string): void {
     this.db.prepare("DELETE FROM agendamentos WHERE cliente_id = ?").run(id);
     this.db.prepare("DELETE FROM clientes WHERE id = ?").run(id);
+  }
+
+  // Adapter: converte linha SQLite (formato plano) → entidade de domínio Cliente.
+  private toEntity(row: any): Cliente {
+    return new Cliente({ id: row.id, nome: row.nome, telefone: row.telefone, email: row.email });
   }
 }
 
@@ -100,18 +110,22 @@ export class SQLiteProfissionalRepository implements ProfissionalRepository {
 
   buscarPorId(id: string): Profissional | undefined {
     const row = this.db.prepare("SELECT * FROM profissionais WHERE id = ?").get(id) as any;
-    if (!row) return undefined;
-    return new Profissional({ ...row, especialidades: JSON.parse(row.especialidades) });
+    return row ? this.toEntity(row) : undefined;
   }
 
   listar(): Profissional[] {
     const rows = this.db.prepare("SELECT * FROM profissionais").all() as any[];
-    return rows.map((r) => new Profissional({ ...r, especialidades: JSON.parse(r.especialidades) }));
+    return rows.map((r) => this.toEntity(r));
   }
 
   deletar(id: string): void {
     this.db.prepare("DELETE FROM agendamentos WHERE profissional_id = ?").run(id);
     this.db.prepare("DELETE FROM profissionais WHERE id = ?").run(id);
+  }
+
+  // Adapter: converte linha SQLite (especialidades como JSON string) → Profissional de domínio.
+  private toEntity(row: any): Profissional {
+    return new Profissional({ id: row.id, nome: row.nome, especialidades: JSON.parse(row.especialidades) });
   }
 }
 
@@ -127,17 +141,22 @@ export class SQLiteServicoRepository implements ServicoRepository {
 
   buscarPorId(id: string): Servico | undefined {
     const row = this.db.prepare("SELECT * FROM servicos WHERE id = ?").get(id) as any;
-    return row ? new Servico({ ...row, duracaoMinutos: row.duracao_minutos }) : undefined;
+    return row ? this.toEntity(row) : undefined;
   }
 
   listar(): Servico[] {
     const rows = this.db.prepare("SELECT * FROM servicos").all() as any[];
-    return rows.map((r) => new Servico({ ...r, duracaoMinutos: r.duracao_minutos }));
+    return rows.map((r) => this.toEntity(r));
   }
 
   deletar(id: string): void {
     this.db.prepare("DELETE FROM agendamentos WHERE servico_id = ?").run(id);
     this.db.prepare("DELETE FROM servicos WHERE id = ?").run(id);
+  }
+
+  // Adapter: converte linha SQLite (duracao_minutos snake_case) → Servico de domínio (duracaoMinutos camelCase).
+  private toEntity(row: any): Servico {
+    return new Servico({ id: row.id, nome: row.nome, tipo: row.tipo, duracaoMinutos: row.duracao_minutos, preco: row.preco });
   }
 }
 
