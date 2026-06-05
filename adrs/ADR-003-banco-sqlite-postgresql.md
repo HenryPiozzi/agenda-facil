@@ -44,7 +44,8 @@ O banco é criado automaticamente na primeira execução pelo método
 
 **Custos:**
 - SQLite não suporta concorrência de escrita — aceitável em desenvolvimento.
-- `better-sqlite3` é uma dependência nativa (requer build tools) — pode
-  gerar problemas em ambientes sem Python/MSVC para compilação.
+- `better-sqlite3` é uma dependência nativa (requer build tools como
+  MSVC no Windows ou gcc no Linux) — pode gerar problemas em ambientes sem
+  as ferramentas de compilação configuradas.
 - Diferenças de dialeto entre SQLite e PostgreSQL (tipos, case-sensitivity)
   podem mascarar bugs que só aparecem em produção.

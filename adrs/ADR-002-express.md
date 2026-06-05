@@ -1,7 +1,6 @@
 # ADR-002: Adotar Express.js como framework web
 
-**Status:** Accepted  
-**Supersede:** ~~ADR-002-fastapi.md~~ (ver histórico abaixo)
+**Status:** Accepted
 
 ---
 
@@ -21,9 +20,6 @@ um framework que não impusesse sua própria arquitetura, permitindo aplicar
 Clean Architecture de forma explícita e didática — o que é o objetivo
 central do trabalho.
 
-O FastAPI (Python) foi desconsiderado nesta etapa por ser incompatível com
-a decisão de usar TypeScript (ADR-001-linguagem-typescript.md).
-
 ---
 
 ## Decisão
@@ -31,9 +27,9 @@ a decisão de usar TypeScript (ADR-001-linguagem-typescript.md).
 Adotamos **Express 4.x** como framework HTTP da aplicação.
 
 A geração da especificação OpenAPI é feita manualmente via `openapi.yaml`
-versionado no repositório, uma vez que Express não oferece geração
-automática (ao contrário do FastAPI). Essa abordagem foi preferida por
-tornar o contrato da API explícito e independente do framework.
+versionado no repositório. Essa abordagem foi preferida por tornar o
+contrato da API explícito, independente do framework e sempre revisado
+pelo time.
 
 ---
 

@@ -61,5 +61,6 @@ API (Express) → Application (Use Cases) → Domain (Entidades)
 | Padrão | Categoria | Arquivo |
 |--------|-----------|---------|
 | Factory Method | Criação | `src/domain/factories.ts` |
+| Adapter | Estrutura | `src/infrastructure/repositoriesImpl.ts` |
 | Strategy | Comportamento | `src/domain/schedulingStrategy.ts` |
 | Observer | Comportamento | `src/infrastructure/notificationService.ts` |

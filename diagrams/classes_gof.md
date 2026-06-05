@@ -62,7 +62,10 @@ classDiagram
     NotificationObserver <|-- SMSObserver
     NotificationService o-- NotificationObserver
 
-    %% ── REPOSITORY — interfaces DIP (repositories.ts / repositoriesImpl.ts) ─
+    %% ── ADAPTER (repositoriesImpl.ts) ──────────────────────────────────────
+    %% Target: interfaces de repositório do domínio
+    %% Adaptee: linha plana SQLite (snake_case, primitivos, JSON como string)
+    %% Adapter: implementações SQLite com toEntity() que converte os formatos
     class ClienteRepository {
         <<interface>>
         +salvar(cliente: Cliente) Cliente
@@ -78,8 +81,26 @@ classDiagram
         +buscarPorEmail(email: string) Cliente
         +listar() Cliente[]
         +deletar(id: string) void
+        -toEntity(row: SQLiteRow) Cliente
     }
     ClienteRepository <|-- SQLiteClienteRepository
+
+    class ServicoRepository {
+        <<interface>>
+        +salvar(servico: Servico) Servico
+        +buscarPorId(id: string) Servico
+        +listar() Servico[]
+        +deletar(id: string) void
+    }
+    class SQLiteServicoRepository {
+        -db: Database
+        +salvar(servico: Servico) Servico
+        +buscarPorId(id: string) Servico
+        +listar() Servico[]
+        +deletar(id: string) void
+        -toEntity(row: SQLiteRow) Servico
+    }
+    ServicoRepository <|-- SQLiteServicoRepository
 
     class AgendamentoRepository {
         <<interface>>
@@ -96,6 +117,7 @@ classDiagram
         +listarPorProfissional(profId: string, data: Date) Agendamento[]
         +atualizar(agendamento: Agendamento) Agendamento
         +listarTodos() Agendamento[]
+        -toEntity(row: SQLiteRow) Agendamento
     }
     AgendamentoRepository <|-- SQLiteAgendamentoRepository
     CriarAgendamentoUseCase o-- AgendamentoRepository
